@@ -78,7 +78,7 @@ int ras_aer_event_handler(struct trace_seq *s,
 	if (tm)
 		strftime(ev.timestamp, sizeof(ev.timestamp),
 			 "%Y-%m-%d %H:%M:%S %z", tm);
-	trace_seq_printf(s, "%s ", ev.timestamp);
+	trace_seq_printf(s, ", time=%s ", ev.timestamp);
 
 	ev.dev_name = pevent_get_field_raw(s, event, "dev_name",
 					   record, &len, 1);
@@ -91,7 +91,7 @@ int ras_aer_event_handler(struct trace_seq *s,
 	/* Fills the error buffer */
 	bitfield_msg(buf, sizeof(buf), aer_errors, 32, 0, 0, val);
 	ev.msg = buf;
-	trace_seq_printf(s, "%s ", ev.msg);
+	trace_seq_printf(s, ", event_msg:%s ", ev.msg);
 
 	if (pevent_get_field_val(s, event, "severity", record, &val, 1) < 0)
 		return -1;
@@ -109,8 +109,9 @@ int ras_aer_event_handler(struct trace_seq *s,
 	case HW_EVENT_ERR_INFO:
 		ev.error_type = "Info";
 	}
-	trace_seq_puts(s, ev.error_type);
-
+	// Improve the consistency of the output log.
+	// trace_seq_puts(s, ev.error_type);
+	trace_seq_printf(s, ", event_severity:%s",ev.error_type);
 	/* Insert data into the SGBD */
 #ifdef HAVE_SQLITE3
 	ras_store_aer_event(ras, &ev);
