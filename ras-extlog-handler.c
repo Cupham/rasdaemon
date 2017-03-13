@@ -174,7 +174,8 @@ static void report_extlog_mem_event(struct ras_events *ras,
 				    struct trace_seq *s,
 				    struct ras_extlog_event *ev)
 {
-	trace_seq_printf(s, "%d %s error: %s physical addr: 0x%llx mask: 0x%llx%s %s %s",
+	//// Improve the consistency of the output log. The format is ", <parametter>:<value>"
+	trace_seq_printf(s, trace_seq_printf(s, ", error_seq:%d, error_severity:%s, error_type:%s, physical_addr:0x%llx, error_mask:0x%llx%s, err_cper_data:%s, fru_text:%s",
 		ev->error_seq, err_severity(ev->severity),
 		err_type(ev->etype), ev->address,
 		err_mask(ev->pa_mask_lsb),
