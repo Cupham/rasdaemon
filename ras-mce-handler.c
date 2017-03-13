@@ -262,31 +262,40 @@ static void report_mce_event(struct ras_events *ras,
 		now = record->ts/user_hz + ras->uptime_diff;
 	else
 		now = time(NULL);
-
+	
 	tm = localtime(&now);
 	if (tm)
 		strftime(e->timestamp, sizeof(e->timestamp),
 			 "%Y-%m-%d %H:%M:%S %z", tm);
-	trace_seq_printf(s, "%s ", e->timestamp);
+	// Improve the logs's consistency by formatting logs with this formatter:", <parameter>:<value>"
+	trace_seq_printf(s, ", time:%s ", e->timestamp);
 
 	if (*e->bank_name)
-		trace_seq_printf(s, "%s", e->bank_name);
+		trace_seq_printf(s, ", bank:%s", e->bank_name);
 	else
-		trace_seq_printf(s, "bank=%x", e->bank);
+		trace_seq_printf(s, ", bank:%x", e->bank);
 
-	trace_seq_printf(s, ", status= %llx", (long long)e->status);
+	trace_seq_printf(s, ", status:%llx", (long long)e->status);
+	// Make sure that "error_msg" field will be displayed on log
+	trace_seq_puts(s, ", error_msg:");
 	if (*e->error_msg)
-		trace_seq_printf(s, ", %s", e->error_msg);
+		trace_seq_printf(s, "%s", e->error_msg);
+	// Make sure that "mci_status" field will be displayed on log
+	trace_seq_puts(s, ", mci_status:");
 	if (*e->mcistatus_msg)
-		trace_seq_printf(s, ", mci=%s", e->mcistatus_msg);
+		trace_seq_printf(s, "%s", e->mcistatus_msg);
+	// Make sure that "mca_status" field will be displayed on log
+	trace_seq_puts(s, ", mca_status:");
 	if (*e->mcastatus_msg)
-		trace_seq_printf(s, ", mca=%s", e->mcastatus_msg);
-
+		trace_seq_printf(s, "%s", e->mcastatus_msg);
+	// Make sure that "user_action" field will be displayed on log
+	trace_seq_puts(s, ", user_action:");
 	if (*e->user_action)
-		trace_seq_printf(s, " %s", e->user_action);
-
+		trace_seq_printf(s, "%s", e->user_action);
+	// Make sure that "mc_location" field will be displayed on log
+	trace_seq_puts(s, ", mc_location:");
 	if (*e->mc_location)
-		trace_seq_printf(s, ", %s", e->mc_location);
+		trace_seq_printf(s, "%s", e->mc_location);
 
 #if 0
 	/*
@@ -294,46 +303,51 @@ static void report_mce_event(struct ras_events *ras,
 	 * decode/print it, if we already got the uptime from the
 	 * tracing event? Let's just discard it for now.
 	 */
-	trace_seq_printf(s, ", tsc= %d", e->tsc);
-	trace_seq_printf(s, ", walltime= %d", e->walltime);
+	trace_seq_printf(s, ", tsc:%d", e->tsc);
+	trace_seq_printf(s, ", walltime:%d", e->walltime);
 #endif
 
-	trace_seq_printf(s, ", cpu_type= %s", cputype_name[mce->cputype]);
-	trace_seq_printf(s, ", cpu= %d", e->cpu);
-	trace_seq_printf(s, ", socketid= %d", e->socketid);
+	trace_seq_printf(s, ", cpu_type:%s", cputype_name[mce->cputype]);
+	trace_seq_printf(s, ", cpu:%d", e->cpu);
+	trace_seq_printf(s, ", socketid:%d", e->socketid);
 
 #if 0
 	/*
 	 * The CPU vendor is already reported from mce->cputype
 	 */
-	trace_seq_printf(s, ", cpuvendor= %d", e->cpuvendor);
-	trace_seq_printf(s, ", cpuid= %d", e->cpuid);
+	trace_seq_printf(s, ", cpuvendor:%d", e->cpuvendor);
+	trace_seq_printf(s, ", cpuid:%d", e->cpuid);
 #endif
-
+	// Make sure that "ip" field will be displayed on log
+	trace_seq_puts(s, ", ip:");
 	if (e->ip)
-		trace_seq_printf(s, ", ip= %llx%s",
+		trace_seq_printf(s, "%llx%s",
 				 (long long)e->ip,
 				 !(e->mcgstatus & MCG_STATUS_EIPV) ? " (INEXACT)" : "");
-
+	// Make sure that "cs" field will be displayed on log
+	trace_seq_puts(s, ", cs:");
 	if (e->cs)
-		trace_seq_printf(s, ", cs= %x", e->cs);
-
+		trace_seq_printf(s, "%x", e->cs);
+	// Make sure that "misc" field will be displayed on log
+	trace_seq_puts(s, ", misc:");
 	if (e->status & MCI_STATUS_MISCV)
-		trace_seq_printf(s, ", misc= %llx", (long long)e->misc);
-
+		trace_seq_printf(s, "%llx", (long long)e->misc);
+	// Make sure that "addr" field will be displayed on log
+	trace_seq_puts(s, ", addr:");
 	if (e->status & MCI_STATUS_ADDRV)
-		trace_seq_printf(s, ", addr= %llx", (long long)e->addr);
+		trace_seq_printf(s, "%llx", (long long)e->addr);
 
 	if (e->mcgstatus_msg)
-		trace_seq_printf(s, ", %s", e->mcgstatus_msg);
+		trace_seq_printf(s, ", mcgstatus:%s", e->mcgstatus_msg);
 	else
-		trace_seq_printf(s, ", mcgstatus= %llx",
+		trace_seq_printf(s, ", mcgstatus:%llx",
 				 (long long)e->mcgstatus);
-
+	// Make sure that "mcgcap" field will be displayed on log
+	trace_seq_puts(s, ", mcgcap:");
 	if (e->mcgcap)
-		trace_seq_printf(s, ", mcgcap= %llx", (long long)e->mcgcap);
+		trace_seq_printf(s, "%llx", (long long)e->mcgcap);
 
-	trace_seq_printf(s, ", apicid= %x", e->apicid);
+	trace_seq_printf(s, ", apicid:%x", e->apicid);
 
 	/*
 	 * FIXME: The original mcelog userspace tool uses DMI to map from
