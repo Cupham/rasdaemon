@@ -55,14 +55,14 @@ int ras_mc_event_handler(struct trace_seq *s,
 	if (tm)
 		strftime(ev.timestamp, sizeof(ev.timestamp),
 			 "%Y-%m-%d %H:%M:%S %z", tm);
-	trace_seq_printf(s, "%s ", ev.timestamp);
+	trace_seq_printf(s, ", time:%s ", ev.timestamp);
 
 	if (pevent_get_field_val(s,  event, "error_count", record, &val, 1) < 0)
 		goto parse_error;
 	parsed_fields++;
 
 	ev.error_count = val;
-	trace_seq_printf(s, "%d ", ev.error_count);
+	trace_seq_printf(s, ", error_count:%d ", ev.error_count);
 
 	if (pevent_get_field_val(s, event, "error_type", record, &val, 1) < 0)
 		goto parse_error;
@@ -82,30 +82,36 @@ int ras_mc_event_handler(struct trace_seq *s,
 	case HW_EVENT_ERR_INFO:
 		ev.error_type = "Info";
 	}
-
-	trace_seq_puts(s, ev.error_type);
-	if (ev.error_count > 1)
+	// Add ", <error_type>:<value>" to make the log more consistent
+	//trace_seq_puts(s, ev.error_type);
+	trace_seq_printf(s,", error_type:%s", ev.error_type);
+	
+	// We do not need this field.
+	/*if (ev.error_count > 1)
 		trace_seq_puts(s, " errors:");
 	else
 		trace_seq_puts(s, " error:");
+	*/
 
+	// make sure that <msg> will be appear on the log eventhough there is no data.	
 	ev.msg = pevent_get_field_raw(s, event, "msg", record, &len, 1);
+	trace_seq_puts(s, ", msg:");
 	if (!ev.msg)
 		goto parse_error;
 	parsed_fields++;
 
 	if (*ev.msg) {
-		trace_seq_puts(s, " ");
 		trace_seq_puts(s, ev.msg);
 	}
-
+	
 	ev.label = pevent_get_field_raw(s, event, "label", record, &len, 1);
 	if (!ev.label)
 		goto parse_error;
 	parsed_fields++;
-
+	// make sure <lable> field will be displayed in log file
+	trace_seq_puts(s, ", lable:");
 	if (*ev.label) {
-		trace_seq_puts(s, " on ");
+		//trace_seq_puts(s, " on ");
 		trace_seq_puts(s, ev.label);
 	}
 
@@ -115,7 +121,7 @@ int ras_mc_event_handler(struct trace_seq *s,
 	parsed_fields++;
 
 	ev.mc_index = val;
-	trace_seq_printf(s, "mc: %d", ev.mc_index);
+	trace_seq_printf(s, ", mc: %d", ev.mc_index);
 
 	if (pevent_get_field_val(s,  event, "top_layer", record, &val, 1) < 0)
 		goto parse_error;
@@ -134,13 +140,14 @@ int ras_mc_event_handler(struct trace_seq *s,
 
 	if (ev.top_layer >= 0 || ev.middle_layer >= 0 || ev.lower_layer >= 0) {
 		if (ev.lower_layer >= 0)
-			trace_seq_printf(s, " location: %d:%d:%d",
+			// add <,> to make the log more consistent
+			trace_seq_printf(s, ", location: %d:%d:%d",
 					ev.top_layer, ev.middle_layer, ev.lower_layer);
 		else if (ev.middle_layer >= 0)
-			trace_seq_printf(s, " location: %d:%d",
+			trace_seq_printf(s, ", location: %d:%d",
 					 ev.top_layer, ev.middle_layer);
 		else
-			trace_seq_printf(s, " location: %d", ev.top_layer);
+			trace_seq_printf(s, ", location: %d", ev.top_layer);
 	}
 
 	if (pevent_get_field_val(s,  event, "address", record, &val, 1) < 0)
@@ -148,15 +155,18 @@ int ras_mc_event_handler(struct trace_seq *s,
 	parsed_fields++;
 
 	ev.address = val;
+	// make sure "address" field will be displayed in log file eventhough there is no data
+	trace_seq_puts(s, ", address:");
 	if (ev.address)
-		trace_seq_printf(s, " address: 0x%08llx", ev.address);
-
+		trace_seq_printf(s, ", 0x%08llx", ev.address);
+	
 	if (pevent_get_field_val(s,  event, "grain_bits", record, &val, 1) < 0)
 		goto parse_error;
 	parsed_fields++;
-
+	
 	ev.grain = val;
-	trace_seq_printf(s, " grain: %lld", ev.grain);
+	// add <,> to make the log more consistent
+	trace_seq_printf(s, ", grain: %lld", ev.grain);
 
 
 	if (pevent_get_field_val(s,  event, "syndrome", record, &val, 1) < 0)
@@ -164,17 +174,19 @@ int ras_mc_event_handler(struct trace_seq *s,
 	parsed_fields++;
 
 	ev.syndrome = val;
+	// make sure "syndrome" field will be displayed in log file eventhough there is no data
+	trace_seq_puts(s, ", syndrome:");
 	if (val)
-		trace_seq_printf(s, " syndrome: 0x%08llx", ev.syndrome);
+		trace_seq_printf(s, "0x%08llx", ev.syndrome);
 
 	ev.driver_detail = pevent_get_field_raw(s, event, "driver_detail", record,
 					     &len, 1);
 	if (!ev.driver_detail)
 		goto parse_error;
 	parsed_fields++;
-
+	// make sure "driver_detail" field will be displayed in log file eventhough there is no data
+	trace_seq_puts(s, ", driver_detail:");
 	if (*ev.driver_detail) {
-		trace_seq_puts(s, " ");
 		trace_seq_puts(s, ev.driver_detail);
 	}
 	trace_seq_puts(s, ")");
