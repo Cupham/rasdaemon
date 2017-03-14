@@ -55,14 +55,14 @@ int ras_mc_event_handler(struct trace_seq *s,
 	if (tm)
 		strftime(ev.timestamp, sizeof(ev.timestamp),
 			 "%Y-%m-%d %H:%M:%S %z", tm);
-	trace_seq_printf(s, "%s ", ev.timestamp);
+	trace_seq_printf(s, ", time:%s ", ev.timestamp);
 
 	if (pevent_get_field_val(s,  event, "error_count", record, &val, 1) < 0)
 		goto parse_error;
 	parsed_fields++;
 
 	ev.error_count = val;
-	trace_seq_printf(s, "%d ", ev.error_count);
+	trace_seq_printf(s, ", error_count:%d", ev.error_count);
 
 	if (pevent_get_field_val(s, event, "error_type", record, &val, 1) < 0)
 		goto parse_error;
@@ -83,19 +83,21 @@ int ras_mc_event_handler(struct trace_seq *s,
 		ev.error_type = "Info";
 	}
 
+	trace_seq_puts(s, ", error_type:");
 	trace_seq_puts(s, ev.error_type);
-	if (ev.error_count > 1)
-		trace_seq_puts(s, " errors:");
-	else
-		trace_seq_puts(s, " error:");
-
-	ev.msg = pevent_get_field_raw(s, event, "msg", record, &len, 1);
+	// Actually, we do not need this field, so I suggest to ingore it
+	// or use a format like "error(s)". I ignore this field in testing.
+	//if (ev.error_count > 1)
+	//	trace_seq_puts(s, " errors:");
+	//else
+	//	trace_seq_puts(s, " error:");
+	
+	ev.msg = pevent_get_field_raw(s, event, "msg", record, &len, 1);	
 	if (!ev.msg)
 		goto parse_error;
 	parsed_fields++;
-
+	trace_seq_puts(s, ", msg:");
 	if (*ev.msg) {
-		trace_seq_puts(s, " ");
 		trace_seq_puts(s, ev.msg);
 	}
 
@@ -103,9 +105,8 @@ int ras_mc_event_handler(struct trace_seq *s,
 	if (!ev.label)
 		goto parse_error;
 	parsed_fields++;
-
+	trace_seq_puts(s, ", label:");
 	if (*ev.label) {
-		trace_seq_puts(s, " on ");
 		trace_seq_puts(s, ev.label);
 	}
 
@@ -115,7 +116,7 @@ int ras_mc_event_handler(struct trace_seq *s,
 	parsed_fields++;
 
 	ev.mc_index = val;
-	trace_seq_printf(s, "mc: %d", ev.mc_index);
+	trace_seq_printf(s, ", mc:%d", ev.mc_index);
 
 	if (pevent_get_field_val(s,  event, "top_layer", record, &val, 1) < 0)
 		goto parse_error;
@@ -134,13 +135,13 @@ int ras_mc_event_handler(struct trace_seq *s,
 
 	if (ev.top_layer >= 0 || ev.middle_layer >= 0 || ev.lower_layer >= 0) {
 		if (ev.lower_layer >= 0)
-			trace_seq_printf(s, " location: %d:%d:%d",
+			trace_seq_printf(s, ", location:%d:%d:%d",
 					ev.top_layer, ev.middle_layer, ev.lower_layer);
 		else if (ev.middle_layer >= 0)
-			trace_seq_printf(s, " location: %d:%d",
+			trace_seq_printf(s, ", location:%d:%d",
 					 ev.top_layer, ev.middle_layer);
 		else
-			trace_seq_printf(s, " location: %d", ev.top_layer);
+			trace_seq_printf(s, ", location:%d", ev.top_layer);
 	}
 
 	if (pevent_get_field_val(s,  event, "address", record, &val, 1) < 0)
@@ -148,33 +149,33 @@ int ras_mc_event_handler(struct trace_seq *s,
 	parsed_fields++;
 
 	ev.address = val;
+	trace_seq_puts(s, ", address:");
 	if (ev.address)
-		trace_seq_printf(s, " address: 0x%08llx", ev.address);
-
+		trace_seq_printf(s, "0x%08llx", ev.address);
+	
 	if (pevent_get_field_val(s,  event, "grain_bits", record, &val, 1) < 0)
 		goto parse_error;
 	parsed_fields++;
-
+	trace_seq_puts(s, ", grain:");
 	ev.grain = val;
-	trace_seq_printf(s, " grain: %lld", ev.grain);
+	trace_seq_printf(s, "%lld", ev.grain);
 
 
 	if (pevent_get_field_val(s,  event, "syndrome", record, &val, 1) < 0)
 		goto parse_error;
 	parsed_fields++;
-
+	trace_seq_puts(s, ", syndrome:");
 	ev.syndrome = val;
 	if (val)
-		trace_seq_printf(s, " syndrome: 0x%08llx", ev.syndrome);
+		trace_seq_printf(s, "0x%08llx", ev.syndrome);
 
 	ev.driver_detail = pevent_get_field_raw(s, event, "driver_detail", record,
 					     &len, 1);
 	if (!ev.driver_detail)
 		goto parse_error;
 	parsed_fields++;
-
+	trace_seq_puts(s, ", driver_detail:");
 	if (*ev.driver_detail) {
-		trace_seq_puts(s, " ");
 		trace_seq_puts(s, ev.driver_detail);
 	}
 	trace_seq_puts(s, ")");

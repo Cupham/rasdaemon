@@ -78,7 +78,7 @@ int ras_aer_event_handler(struct trace_seq *s,
 	if (tm)
 		strftime(ev.timestamp, sizeof(ev.timestamp),
 			 "%Y-%m-%d %H:%M:%S %z", tm);
-	trace_seq_printf(s, ", time=%s ", ev.timestamp);
+	trace_seq_printf(s, ", time:%s ", ev.timestamp);
 
 	ev.dev_name = pevent_get_field_raw(s, event, "dev_name",
 					   record, &len, 1);
@@ -112,6 +112,7 @@ int ras_aer_event_handler(struct trace_seq *s,
 	// Improve the consistency of the output log.
 	// trace_seq_puts(s, ev.error_type);
 	trace_seq_printf(s, ", event_severity:%s",ev.error_type);
+
 	/* Insert data into the SGBD */
 #ifdef HAVE_SQLITE3
 	ras_store_aer_event(ras, &ev);

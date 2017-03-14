@@ -173,8 +173,9 @@ static void report_extlog_mem_event(struct ras_events *ras,
 				    struct pevent_record *record,
 				    struct trace_seq *s,
 				    struct ras_extlog_event *ev)
+// reformat the output by ", <parameter>:value" format
 {
-	trace_seq_printf(s, "%d %s error: %s physical addr: 0x%llx mask: 0x%llx%s %s %s",
+	trace_seq_printf(s, ", error_seq:%d, error_severity:%s, error_type:%s, physical_addr:0x%llx, error_mask:0x%llx%s, err_cper_data:%s, fru_text:%s",
 		ev->error_seq, err_severity(ev->severity),
 		err_type(ev->etype), ev->address,
 		err_mask(ev->pa_mask_lsb),
@@ -212,7 +213,8 @@ int ras_extlog_mem_event_handler(struct trace_seq *s,
 	if (tm)
 		strftime(ev.timestamp, sizeof(ev.timestamp),
 			 "%Y-%m-%d %H:%M:%S %z", tm);
-	trace_seq_printf(s, "%s ", ev.timestamp);
+	// formating the time in ", time:<value>" format
+	trace_seq_printf(s, ", time:%s ", ev.timestamp);
 
 	if (pevent_get_field_val(s,  event, "etype", record, &val, 1) < 0)
 		return -1;

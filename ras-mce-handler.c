@@ -267,27 +267,70 @@ static void report_mce_event(struct ras_events *ras,
 	if (tm)
 		strftime(e->timestamp, sizeof(e->timestamp),
 			 "%Y-%m-%d %H:%M:%S %z", tm);
-	trace_seq_printf(s, "%s ", e->timestamp);
-
+	// OLD	
+	//trace_seq_printf(s, "%s ", e->timestamp);
+	// NEW after reformating the time's display
+	trace_seq_printf(s, ",time:%s", e->timestamp);
+	
+	// OLD
+	//if (*e->bank_name)
+	//	trace_seq_printf(s, "%s", e->bank_name);
+	//else
+	//	trace_seq_printf(s, "bank=%x", e->bank);
+	
+	// NEW after making sure that "bank:" will always be printed out by ", bank:<value>" format.
 	if (*e->bank_name)
-		trace_seq_printf(s, "%s", e->bank_name);
+		trace_seq_printf(s, "bank:%s", e->bank_name);
 	else
-		trace_seq_printf(s, "bank=%x", e->bank);
-
-	trace_seq_printf(s, ", status= %llx", (long long)e->status);
+		trace_seq_printf(s, "bank:%x", e->bank);	
+	//OLD	
+	//trace_seq_printf(s, ", status= %llx", (long long)e->status);
+	
+	//NEW after reformating status's display
+	trace_seq_printf(s, ", status:%llx", (long long)e->status);
+	
+	//OLD
+	//if (*e->error_msg)
+	//	trace_seq_printf(s, ", %s", e->error_msg);
+	
+	//NEW after making sure that "error_msg" field will be displayed on log.
+	trace_seq_puts(s, ", error_msg:");
 	if (*e->error_msg)
-		trace_seq_printf(s, ", %s", e->error_msg);
+		trace_seq_printf(s, "%s", e->error_msg);
+	
+	//OLD	
+	//if (*e->mcistatus_msg)
+	//	trace_seq_printf(s, ", mci=%s", e->mcistatus_msg);
+	
+	//NEW after making sure that "mci_status_msg" field will be displayed on log with consistent format.
+	trace_seq_puts(s, ", mci_status:");	
 	if (*e->mcistatus_msg)
-		trace_seq_printf(s, ", mci=%s", e->mcistatus_msg);
+		trace_seq_printf(s, "%s", e->mcistatus_msg);
+	
+	//OLD
+	//if (*e->mcastatus_msg)
+	//	trace_seq_printf(s, ", mca_status%s", e->mcastatus_msg);
+
+	//NEW after making sure that "mca_status_msg" field will be displayed on log with consistent format.
+	trace_seq_puts(s, ", mca_status:");
 	if (*e->mcastatus_msg)
-		trace_seq_printf(s, ", mca=%s", e->mcastatus_msg);
+		trace_seq_printf(s, "%s", e->mcastatus_msg);
+	//OLD
+	//if (*e->user_action)
+	//	trace_seq_printf(s, " %s", e->user_action);
 
+	//NEW after making sure that "user_action" field will be displayed on log with consistent format
+	trace_seq_puts(s, ", user_action:");
 	if (*e->user_action)
-		trace_seq_printf(s, " %s", e->user_action);
-
+		trace_seq_printf(s, "%s", e->user_action);
+	//OLD	
+	//if (*e->mc_location)
+	//	trace_seq_printf(s, ", %s", e->mc_location);
+	
+	//NEW  after making sure that "mc_location" field will be displayed on log with consistent format
+	trace_seq_puts(s, ", mc_location:");
 	if (*e->mc_location)
-		trace_seq_printf(s, ", %s", e->mc_location);
-
+		trace_seq_printf(s, "%s", e->mc_location);
 #if 0
 	/*
 	 * While the logic for decoding tsc is there at mcelog, why to
@@ -297,11 +340,21 @@ static void report_mce_event(struct ras_events *ras,
 	trace_seq_printf(s, ", tsc= %d", e->tsc);
 	trace_seq_printf(s, ", walltime= %d", e->walltime);
 #endif
+	//OLD
+	//trace_seq_printf(s, ", cpu_type= %s", cputype_name[mce->cputype]);
+	
+	//NEW after reformating "cpu_type"'s display
+	trace_seq_printf(s, ", cpu_type:%s", cputype_name[mce->cputype]);
+	//OLD
+	//trace_seq_printf(s, ", cpu= %d", e->cpu);
 
-	trace_seq_printf(s, ", cpu_type= %s", cputype_name[mce->cputype]);
-	trace_seq_printf(s, ", cpu= %d", e->cpu);
-	trace_seq_printf(s, ", socketid= %d", e->socketid);
-
+	//NEW after reformating "cpu"'s display
+	trace_seq_printf(s, ", cpu:%d", e->cpu);
+	//OLD
+	//trace_seq_printf(s, ", socketid= %d", e->socketid);
+	
+	//NEW after reformating "socketid"'s display
+	trace_seq_printf(s, ", socketid:%d", e->socketid);
 #if 0
 	/*
 	 * The CPU vendor is already reported from mce->cputype
@@ -309,32 +362,44 @@ static void report_mce_event(struct ras_events *ras,
 	trace_seq_printf(s, ", cpuvendor= %d", e->cpuvendor);
 	trace_seq_printf(s, ", cpuid= %d", e->cpuid);
 #endif
-
+	// OLD
+	//if (e->ip)
+	//	trace_seq_printf(s, ", ip= %llx%s",
+	//			 (long long)e->ip,
+	//			 !(e->mcgstatus & MCG_STATUS_EIPV) ? " (INEXACT)" : "");
+	
+	//NEW after making sure that "ip" field will be displayed on log with consistent format
+	trace_seq_puts(s, ", ip:");
 	if (e->ip)
-		trace_seq_printf(s, ", ip= %llx%s",
+		trace_seq_printf(s, "%llx%s",
 				 (long long)e->ip,
 				 !(e->mcgstatus & MCG_STATUS_EIPV) ? " (INEXACT)" : "");
-
+	// I will apply the same pattern to "cs", "misc", "addr", "mcgstatus" and mcgcap
+	trace_seq_puts(s, ", cs:");
 	if (e->cs)
-		trace_seq_printf(s, ", cs= %x", e->cs);
+		trace_seq_printf(s, "%x", e->cs);
+	trace_seq_puts(s, ", misc:");
 
 	if (e->status & MCI_STATUS_MISCV)
-		trace_seq_printf(s, ", misc= %llx", (long long)e->misc);
-
+		trace_seq_printf(s, "%llx", (long long)e->misc);
+	trace_seq_puts(s, ", addr:");
 	if (e->status & MCI_STATUS_ADDRV)
-		trace_seq_printf(s, ", addr= %llx", (long long)e->addr);
-
+		trace_seq_printf(s, "%llx", (long long)e->addr);
+	
 	if (e->mcgstatus_msg)
-		trace_seq_printf(s, ", %s", e->mcgstatus_msg);
+		trace_seq_printf(s, ", mcgstatus:%s", e->mcgstatus_msg);
 	else
-		trace_seq_printf(s, ", mcgstatus= %llx",
+		trace_seq_printf(s, ", mcgstatus:%llx",
 				 (long long)e->mcgstatus);
-
+	trace_seq_puts(s, ", mcgcap:");
 	if (e->mcgcap)
-		trace_seq_printf(s, ", mcgcap= %llx", (long long)e->mcgcap);
-
-	trace_seq_printf(s, ", apicid= %x", e->apicid);
-
+		trace_seq_printf(s, "%llx", (long long)e->mcgcap);
+	//OLD
+	//trace_seq_printf(s, ", apicid= %x", e->apicid);
+	
+	//NEW after reformating "apicid"'s display
+	trace_seq_printf(s, ", apicid:%x", e->apicid);
+	
 	/*
 	 * FIXME: The original mcelog userspace tool uses DMI to map from
 	 * address to DIMM. From the comments there, the code there doesn't
